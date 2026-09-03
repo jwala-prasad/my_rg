@@ -1,0 +1,58 @@
+name: Terraform Azure RG
+
+on:
+  push:
+    branches:
+      - feature/my-rg
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # Checkout code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Login to Azure
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Setup Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # Terraform Init
+      - name: Terraform Init
+        run: terraform init
+
+      # Terraform Format Check
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      # Terraform Validate
+      - name: Terraform Validate
+        run: terraform validate
+
+      # Terraform Plan - feature branch
+      - name: Terraform Plan
+        if: github.ref == 'refs/heads/feature'
+        run: terraform plan
+
+      # Terraform Plan - Pull Request
+      - name: Terraform Plan on PR
+        if: github.event_name == 'pull_request'
+        run: terraform plan
+
+      # Terraform Apply - main branch
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve
